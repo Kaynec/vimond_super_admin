@@ -10,7 +10,7 @@ import BarChart from '../components/BarChart.vue';
 import { grades } from './grades';
 import { colors } from './colors';
 import { useGenerateDate } from './GenerateDates';
-import { columns, localeOBJ, columnsForShop } from './consts';
+import { columns, localeOBJ } from './consts';
 
 type OrderPercentType = {
   value: number;
@@ -154,19 +154,6 @@ const orderPercent = computedAsync<OrderPercentType[] | null>(async () => {
   return null;
 }, null);
 
-// const rows = computed(() => {
-//   return studentsWithOrders.value?.map(el => {
-//     return {
-//       shaba: el?.sheba_number,
-//       name: el?.firstname + ' ' + el?.lastname,
-//       field: el?.firstname + ' ' + el?.lastname,
-//       phone: el?.phone_number,
-//       image: el?.profile_image,
-//       id: el?.id
-//     };
-//   });
-// });
-
 const rows = computed(() => {
   return studentsWithOrders.value?.map(el => {
     return {
@@ -175,11 +162,22 @@ const rows = computed(() => {
       field: el?.firstname + ' ' + el?.lastname,
       phone: el?.phone_number,
       image: el?.profile_image,
-      id: el?.id,
-      orders: el.orders
+      id: el?.id
     };
   });
 });
+// const rows = computed(() => {
+//   return students.value?.map(el => {
+//     return {
+//       shaba: el?.sheba_number,
+//       name: el?.user?.firstname + ' ' + el?.user?.lastname,
+//       field: el?.user?.firstname + ' ' + el?.user?.lastname,
+//       phone: el?.user?.phone_number,
+//       image: el?.user?.profile_image,
+//       id: el?.id
+//     };
+//   });
+// });
 
 const hideBottom = ref(false);
 const hideSelectedBanner = ref(false);
@@ -314,72 +312,27 @@ const filterDuplicates = (array: any[], property = 'phone_number') => {
   });
 };
 
-const nameFilterProp = ref('');
-const ageFilterProp = ref<number>();
-
-const voucherCodeProp = ref('');
-
-const paymentTypeProp = ref('');
-
-const gradeProp = ref('');
-
-const schoolProp = ref('');
-
-const genderProp = ref('');
-
-const cityProp = ref('');
-
-const stateProp = ref('');
-
-const dateProp = ref('');
-
-const data = ref([])
-
-const studentsWithOrdersComputed = computed(() => {
-  if (!students.value.length) return;
+const studentsWithOrders = computed(() => {
   const res = order_list.value.map((el: any) => {
     return {
       ...el.order
     };
   });
-
   let allUsers = order_list.value.map((el: any) => {
-    const orders = res
-      .filter(
-        (ele: any) => ele.user.phone_number === el.order.user.phone_number
-      )
-      .map(el => {
-        const { user, ...rest } = el;
-        return {
-          ...rest,
-          date: rest?.updated_at || rest?.create_at
-        };
-      });
     return {
       ...el.order.user,
-      id: students.value.find(
-        (student: any) =>
-          student.user.phone_number === el.order.user.phone_number
-      )?.id,
-      orders
+      orders: res.filter(
+        (ele: any) => ele.user.phone_number === el.order.user.phone_number
+      )
     };
   });
   allUsers = filterDuplicates(allUsers);
-  data.value  = allUsers
   return allUsers;
 });
-
-
-const studentsWithOrders = computed(() => {
-  console.log('lols')
-  return studentsWithOrdersComputed.value?.filter(element =>
-    `${element.firstname} ${element.lastname}`.includes(nameFilterProp.value)
-  );
-});
-
 const expanded = ref<any[]>([]);
-const toggleExpanded = val =>
-  (expanded.value = expanded.value[0] === val ? [] : [val]);
+const toggleExpanded = val => {
+  expanded.value = expanded.value[0] === val ? [] : [val];
+};
 </script>
 
 <template>
@@ -570,28 +523,29 @@ const toggleExpanded = val =>
                   dense
                   class="q-pa-sm"
                   @click="toggleExpanded(props.row.name)"
-                  >مشاهده خریدها</q-btn
-                >
+                >مشاهده خریدها</q-btn>
               </q-td>
               <q-td v-for="col in props.cols" :key="col.name" :props="props">
+
                 <template v-if="col.name === 'image'">
                   <img
-                    style="padding: 5px; border-radius: 8px"
-                    width="45"
-                    height="45"
-                    loading="lazy"
-                    v-if="col.value"
-                    :src="col.value"
-                  />
-                  <img
-                    style="
-                      padding: 5px;
-                      border-radius: 8px;
-                      width: 45px;
-                      height: 45px;
-                    "
-                    v-else
-                  />
+                  style="padding: 5px; border-radius: 8px"
+                  width="45"
+                  height="45"
+                  loading="lazy"
+                  v-if="col.value"
+                  :src="col.value"
+                />
+                <img
+                  style="
+                    padding: 5px;
+                    border-radius: 8px;
+                    width: 45px;
+                    height: 45px;
+                  "
+                  v-else
+                />
+
                 </template>
 
                 <div v-else-if="col.name === 'profile'">
@@ -616,52 +570,35 @@ const toggleExpanded = val =>
             <q-tr v-show="props.expand" :props="props">
               <td colspan="100%">
                 <q-table
-                  :rows="props.row.orders"
-                  :columns="columnsForShop"
+                  :rows="rows"
+                  :columns="columns.slice(0, 2)"
                   bordered
                   flat
                   row-key="name"
                   class="col-12"
                 >
-                  <template v-slot:body-cell-payment_type="props">
-                    <q-td :props="props">
-                      {{ props.row.payment_type === 1 ? 'نقدی' : 'قسطی' }}
-                    </q-td>
-                  </template>
-                  <template v-slot:body-cell-date="props">
-                    <q-td :props="props">
-                      {{ new Date(props.row.date).toLocaleDateString('fa-Fa') }}
-                    </q-td>
-                  </template>
-
-                  <template v-slot:body-cell-platform="props">
-                    <q-td :props="props">
-                      {{ props.row.platform === 1 ? 'وب' : 'اپلیکیشن' }}
-                    </q-td>
-                  </template>
-
-                  <template v-slot:body-cell-id="props">
-                    <q-td :props="props">
-                      <div>
-                        <q-btn
-                          class="bg-primary text-white"
-                          @click="
-                            $router.push({
-                              name: 'Payment',
-                              params: {
-                                id: props.row.id
-                              }
-                            })
-                          "
-                          >جزییات پرداخت</q-btn
-                        >
-                      </div>
-                    </q-td>
-                  </template>
                 </q-table>
               </td>
             </q-tr>
           </template>
+          <!-- <template v-slot:body-cell-payment_type="props">
+            <q-td :props="props">
+              <div>
+                <q-btn
+                  class="bg-primary text-white"
+                  @click="
+                    $router.push({
+                      name: 'Payment',
+                      params: {
+                        id: props.row.id
+                      }
+                    })
+                  "
+                  >جزییات پرداخت</q-btn
+                >
+              </div>
+            </q-td>
+          </template> -->
         </q-table>
       </div>
       <div class="col-lg-6 col-xs-12">

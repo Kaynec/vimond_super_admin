@@ -4,21 +4,17 @@
     style="overflow: auto"
     view="hHh lpR fFf"
   >
-    <q-drawer
-      v-model="drawerLeft"
-      show-if-above
-      :width="220"
-      :breakpoint="700"
-      elevated
-      class="bg-primary text-white"
-      style="position: fixed"
+    <div
+      class="bg-primary text-white show-on-desktop"
+      style="position: fixed !important; width: 13rem"
     >
       <ul
         style="list-style: none; padding-top: 8rem"
         class="column window-height q-col-gutter-xl"
       >
-        <li style="padding: 1.5rem 0.7rem  !important">
+        <li style="padding: 1.5rem 0.7rem !important">
           <router-link
+            style="text-decoration: none"
             to="/dashboard"
             class="items-center flex text-white"
             exact-active-class="active"
@@ -38,8 +34,9 @@
             <span> گزارش ساز </span>
           </router-link>
         </li>
-        <li style="padding: 1.5rem 0.7rem  !important">
+        <li style="padding: 1.5rem 0.7rem !important">
           <router-link
+            style="text-decoration: none"
             to="/didehban"
             class="items-center flex self-start"
             exact-active-class="active"
@@ -70,13 +67,13 @@
           </router-link>
         </li>
         <li
-          style="padding: 1.5rem 0.7rem  !important;cursor: pointer;"
-          @click="()=>{
-            store.setToken(''),
-            $router.replace('login')
-          }"
+          style="padding: 1.5rem 0.7rem !important; cursor: pointer"
+          @click="
+            () => {
+              store.setToken(''), $router.replace('login');
+            }
+          "
           class="items-center flex self-start"
-
         >
           <svg
             width="30"
@@ -95,8 +92,8 @@
           <span> خروج از حساب کاربری </span>
         </li>
       </ul>
-    </q-drawer>
-    <q-page-container class="container fit q-px-lg">
+    </div>
+    <q-page-container class="container fit q-px-lg desktop">
       <q-page class="fit">
         <router-view />
       </q-page>
@@ -106,10 +103,6 @@
 
 <script setup lang="ts">
 import { useUserStore } from '../stores/User';
-import { ref } from 'vue';
-
-const drawerLeft = ref(false);
-
 const store = useUserStore();
 </script>
 
@@ -119,5 +112,19 @@ const store = useUserStore();
 }
 .active {
   border-left: 4px solid red;
+}
+
+.show-on-desktop {
+  display: none;
+}
+
+@media screen and (min-width: 850px) {
+  .show-on-desktop {
+    display: block;
+    width: 220px;
+  }
+  .desktop {
+    width: calc(100vw - 220px);
+  }
 }
 </style>

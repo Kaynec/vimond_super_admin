@@ -309,6 +309,7 @@ const getExcelFromUserObject = () => {
           smallLabel="نقش کاربر"
           :dataset="userRoleByGenderChart"
           :key="userGenderReport?.users"
+          v-if="userGenderReport?.users"
         />
       </div>
       <div class="col-lg-6 col-xs-12">
