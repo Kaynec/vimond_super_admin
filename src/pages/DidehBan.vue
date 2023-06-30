@@ -4,10 +4,9 @@ import { useGenerateDate } from './GenerateDates';
 import { computedAsync } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import { instance } from 'src/boot/axios';
-
+import { PACKAGE_PRICE } from './consts';
 import PieChart from '../components/PieChart.vue';
-import BarChart from '../components/BarChart.vue';
-import { grades } from './grades';
+import LineChart from '../components/LineChart.vue';
 import { colors } from './colors';
 
 const { dateForSignUp, dateOptions } = useGenerateDate();
@@ -34,8 +33,8 @@ const lastOrder = computedAsync(async () => {
 const discountReport = computedAsync(async () => {
   const res = await instance.get('/report/discount-report/');
   if (res.data) return res.data;
-  return [];
-}, []);
+  return {};
+}, {});
 
 type OrderPercentType = {
   value: number;
@@ -81,14 +80,13 @@ watch(dateForReport, () => {
 
 dateForReport.value = dataOptionsForReport.value[0];
 
-
-const date = new Date()
-const start_date = ref(new Date(
-  date.setFullYear(date.getFullYear() - 1)
-).toISOString());
+const date = new Date();
+const start_date = ref(
+  new Date(date.setFullYear(date.getFullYear() - 1)).toISOString()
+);
 const end_date = ref(new Date().toISOString());
 
-let keyForRegister = 0
+let keyForRegister = 0;
 const registerReportGraph = computedAsync(async () => {
   const res = await instance.get(
     `/report/register-report/?start_date=${start_date.value}&end_date=${end_date.value}`
@@ -130,8 +128,8 @@ const registerReportGraph = computedAsync(async () => {
   }
 
   return {
-    key:keyForRegister++,
-    value:result
+    key: keyForRegister++,
+    value: result
   };
 });
 
@@ -238,19 +236,24 @@ const dataSetFromDiscount = computed(() => {
 });
 
 const getExcelFromUserObject = () => {
-
   return [
     {
-      'مبلغ آخرین فروش':lastOrder?.value.total_price,
-      'تعداد کل فروش':orderNumberAmount?.value?.orders_number,
-      'مبلغ کل فروش پکیج ها':'',
-      'کل مبلغ تخفیف داده شده':orderNumberAmount.value?.amount?.total_off_price__sum,
-      'تعداد کل کاربران':userGenderReport.value?.users,
-      'درخواست های برداشت':paymentRequestReport.value?.request,
-      'تعداد خرید های اخیر':'',
+      'مبلغ آخرین فروش': lastOrder?.value.total_price,
+      'تعداد کل فروش': orderNumberAmount?.value?.orders_number,
+      'مبلغ کل فروش پکیج ها': '',
+      'کل مبلغ تخفیف داده شده':
+        orderNumberAmount.value?.amount?.total_off_price__sum,
+      'تعداد کل کاربران': userGenderReport.value?.users,
+      'درخواست های برداشت': paymentRequestReport.value?.request,
+      'تعداد خرید های اخیر': ''
     }
-  ]
+  ];
 };
+
+// TODO change this permanently
+const calculatePackagePrice = computed(() => {
+  return (PACKAGE_PRICE * discountReport.value.package ) || 3;
+});
 </script>
 
 <template>
@@ -258,7 +261,12 @@ const getExcelFromUserObject = () => {
     <div class="row q-px-sm q-pt-md q-col-gutter-sm">
       <div class="col-xs-6 col-md-3">
         <q-card class="fit q-pa-sm md-height">
-          مبلغ آخرین فروش: {{ lastOrder?.total_price ?? 0 }}
+          تاریخ آخرین فروش:
+          {{
+            new Date(
+              lastOrder?.updated_at || lastOrder?.create_at
+            ).toLocaleDateString('fa-Fa')
+          }}
         </q-card>
       </div>
       <div class="col-xs-6 col-md-3">
@@ -274,7 +282,7 @@ const getExcelFromUserObject = () => {
       </div>
       <div class="col-xs-6 col-md-3">
         <q-card class="fit q-pa-sm md-height">
-          مبلغ کل فروش پکیج ها: {{}}
+          مبلغ کل فروش پکیج ها: {{ calculatePackagePrice }}
         </q-card>
       </div>
       <div class="col-xs-6 col-md-3">
@@ -289,7 +297,11 @@ const getExcelFromUserObject = () => {
       </div>
       <div class="col-xs-6 col-md-3">
         <q-card class="fit q-pa-sm md-height">
-          تعداد خرید های اخیر: {{}}
+          تعداد خرید های اخیر:
+          {{
+            sellGrowthReport.first_range_order_numbers +
+            sellGrowthReport.second_range_order_numbers
+          }}
         </q-card>
       </div>
       <div class="col-xs-6 col-md-3 text-white">
@@ -322,7 +334,7 @@ const getExcelFromUserObject = () => {
       </div>
 
       <div class="col-lg-6 col-xs-12">
-        <BarChart
+        <LineChart
           label="نرخ ثبت نام"
           :dataset="registerReportGraph?.value"
           :key="registerReportGraph?.key"
@@ -341,7 +353,7 @@ const getExcelFromUserObject = () => {
             >
             </q-select>
           </div>
-        </BarChart>
+        </LineChart>
       </div>
 
       <div class="col-lg-6 col-xs-12">
@@ -354,7 +366,7 @@ const getExcelFromUserObject = () => {
       </div>
 
       <div class="col-12">
-        <BarChart
+        <LineChart
           label="نمودار روند فروش به تفکیک تاریخ"
           :dataset="growthReportChartData.value"
           :key="growthReportChartData.key"
@@ -372,7 +384,7 @@ const getExcelFromUserObject = () => {
             >
             </q-select>
           </div>
-        </BarChart>
+        </LineChart>
       </div>
     </div>
   </main>

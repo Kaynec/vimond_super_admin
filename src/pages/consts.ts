@@ -148,3 +148,5 @@ export const ORDER_TYPES = {
   1:'نقدی' ,
   2:'قسطی',
 }
+
+export const PACKAGE_PRICE = 23000000

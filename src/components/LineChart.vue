@@ -1,6 +1,7 @@
 <template>
   <q-card class="fit q-mt-xl">
     <div class="row items-center q-px-lg">
+      <h6 class="q-mr-lg ml-lg">{{ label }}</h6>
       <div class="col">
         <slot></slot>
       </div>
@@ -82,6 +83,7 @@ const config = {
 //
 
 const props = defineProps<{
+  label: string;
   dataset: {
     label: string;
     color: string;

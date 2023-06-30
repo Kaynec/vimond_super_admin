@@ -5,11 +5,6 @@ import { instance as axios, instance } from '../boot/axios';
 import { grades } from './grades';
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { computedAsync } from '@vueuse/core';
-import { requiredIf } from '@vuelidate/validators';
-import { required } from '@vuelidate/validators';
-import { helpers } from '@vuelidate/validators';
-import { minLength } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
 import { useQuasar } from 'quasar';
 import { newDate , format } from 'date-fns-jalali';
 
@@ -50,7 +45,6 @@ onMounted(async () => {
     model[key] = value;
   }
   model.user.birthdate = format(new Date(model.user.birthdate) , 'yyyy-MM-dd');
-  console.log(model.user.birthdate);
   (model.user.gender as any) === 1 ? model.user.gender  = 'پسر' : model.user.gender = 'دختر'
 });
 
@@ -66,7 +60,6 @@ function toggleClick(e: any) {
   const file = e.target?.files?.[0];
   if (!file) return;
   img.value = URL.createObjectURL(file);
-  console.log(img.value);
   model.user.profile_image = file;
 }
 
@@ -84,9 +77,6 @@ const computedCities = computed(() => {
 });
 
 const showThisWhileUplading = ref(false);
-
-
-console.log( newDate(+'1402/04/10'.split('/')[0] , +'1402/04/10'.split('/')[1] , +'1402/04/10'.split('/')[2]) )
 
 const form = ref();
 

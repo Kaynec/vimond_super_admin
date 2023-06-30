@@ -7,10 +7,12 @@ import { computed, ref, watch } from 'vue';
 import { instance } from 'src/boot/axios';
 import PieChart from '../components/PieChart.vue';
 import BarChart from '../components/BarChart.vue';
+import LineChart from '../components/LineChart.vue';
 import { grades } from './grades';
 import { colors } from './colors';
 import { useGenerateDate } from './GenerateDates';
 import { columns, localeOBJ, columnsForShop } from './consts';
+import { newDate } from 'date-fns-jalali';
 
 type OrderPercentType = {
   value: number;
@@ -126,12 +128,12 @@ const state = ref({
   text: '',
   date: '',
   age: 0,
-  gender: 'پسر',
+  gender: '',
   city: '',
   state: '',
   school: '',
   grade: '',
-  buyingType: '',
+  payment_type: '',
   voucherCode: ''
 });
 
@@ -168,10 +170,10 @@ const orderPercent = computedAsync<OrderPercentType[] | null>(async () => {
 // });
 
 const rows = computed(() => {
-  return studentsWithOrders.value?.map(el => {
+  return studentsWithOrders.value?.map((el: any) => {
     return {
       shaba: el?.sheba_number,
-      name: el?.firstname + ' ' + el?.lastname,
+      name: el?.name,
       field: el?.firstname + ' ' + el?.lastname,
       phone: el?.phone_number,
       image: el?.profile_image,
@@ -218,6 +220,30 @@ const getExcelFromUserObject = (data: any) => {
     return outputOBJ;
   });
 };
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// Fix This Later Step
+const dataSetFromProvinces = computed(()=>{
+  const res :any[]= []
+  studentsWithOrders.value.forEach((el,idx)=>{
+    const element  = res.findIndex(child=>child.province === el.province)
+
+    if (element && element !== idx) {
+      res[element].value += el.orders.length
+    }else {
+      res.push({
+        label:el.province,
+        // 35 is the colos array length
+        color:colors[element % 35],
+        value: el.orders.length
+      })
+    }
+  })
+  return studentsWithOrders.value.map(el=>({
+    label:el.province,
+    value:el.orders.reduce((acc:number,current:number)=>acc+=current,0)
+  }))
+})
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const dataSetFromStudents = computed(() => {
   const map = {} as Record<string, number>;
@@ -306,6 +332,7 @@ const growthReportChartData = computed(() => {
   };
 });
 
+
 const filterDuplicates = (array: any[], property = 'phone_number') => {
   return array.filter((el: any, idx: number, arr: any[]) => {
     const foundEL = arr.findIndex(item => item[property] === el[property]);
@@ -314,29 +341,11 @@ const filterDuplicates = (array: any[], property = 'phone_number') => {
   });
 };
 
-const nameFilterProp = ref('');
-const ageFilterProp = ref<number>();
+const initialData = ref<any[]>([]);
+const studentsWithOrders = ref<any[]>([]);
 
-const voucherCodeProp = ref('');
-
-const paymentTypeProp = ref('');
-
-const gradeProp = ref('');
-
-const schoolProp = ref('');
-
-const genderProp = ref('');
-
-const cityProp = ref('');
-
-const stateProp = ref('');
-
-const dateProp = ref('');
-
-const data = ref([])
-
-const studentsWithOrdersComputed = computed(() => {
-  if (!students.value.length) return;
+const getStudents = () => {
+  shouldContinue.value = false;
   const res = order_list.value.map((el: any) => {
     return {
       ...el.order
@@ -355,27 +364,136 @@ const studentsWithOrdersComputed = computed(() => {
           date: rest?.updated_at || rest?.create_at
         };
       });
+    const restOfElementProperties = students.value.find(
+      (student: any) => student.user.phone_number === el.order.user.phone_number
+    );
     return {
       ...el.order.user,
-      id: students.value.find(
-        (student: any) =>
-          student.user.phone_number === el.order.user.phone_number
-      )?.id,
+      name: el?.order?.user?.firstname + ' ' + el?.order?.user?.lastname,
+      ...restOfElementProperties,
+      ...restOfElementProperties.user,
       orders
     };
   });
   allUsers = filterDuplicates(allUsers);
-  data.value  = allUsers
   return allUsers;
-});
+};
 
-
-const studentsWithOrders = computed(() => {
-  console.log('lols')
-  return studentsWithOrdersComputed.value?.filter(element =>
-    `${element.firstname} ${element.lastname}`.includes(nameFilterProp.value)
-  );
+let shouldContinue = ref(true);
+// watch the students for change on filter params
+watch(students, () => {
+  if (!shouldContinue.value) return;
+  if (!students.value.length) return;
+  initialData.value = getStudents();
+  studentsWithOrders.value = initialData.value;
 });
+watch(
+  () => state.value.text,
+  () => {
+    studentsWithOrders.value = initialData.value.filter((student: any) =>
+      student.name.includes(state.value.text)
+    );
+  }
+);
+watch(
+  () => state.value.date,
+  () => {
+    studentsWithOrders.value = initialData.value.filter((student: any) => {
+      let year = +state.value.date.split('/')[0],
+        month = +state.value.date.split('/')[1],
+        day = +state.value.date.split('/')[2];
+      const date = newDate(year, month, day);
+      return (
+        student.birthdate ===
+        `${date.getFullYear()}-${('0' + date.getMonth()).slice(-2)}-${(
+          '0' + date.getDay()
+        ).slice(-2)}`
+      );
+    });
+  }
+);
+watch(
+  () => state.value.age,
+  () => {
+    studentsWithOrders.value = initialData.value.filter((student: any) => {
+      const currentYear = new Date().getFullYear();
+      const birthDateYear = new Date(student.birthdate).getFullYear();
+      return currentYear - birthDateYear === state.value.age;
+    });
+  }
+);
+watch(
+  () => state.value.state,
+  () => {
+    studentsWithOrders.value = initialData.value.filter((student: any) => student.province === (state.value.state as any).name);
+  }
+);
+watch(
+  () => state.value.city,
+  () => {
+    studentsWithOrders.value = initialData.value.filter((student: any) => student.province === (state.value.city as any).name);
+  }
+);
+watch(
+  () => state.value.gender,
+  () => {
+    studentsWithOrders.value = initialData.value.filter((student: any) => {
+      return (
+        +(state.value.gender as unknown as { value: number }).value ===
+        +student.gender
+      );
+    });
+  }
+);
+watch(
+  () => state.value.school,
+  () => {
+    studentsWithOrders.value = initialData.value.filter((student: any) => {
+      return (
+        +(state.value.school as unknown as { id: number }).id ===
+        +student.school_name
+      );
+    });
+  }
+);
+watch(
+  () => state.value.grade,
+  () => {
+    studentsWithOrders.value = initialData.value.filter((student: any) => {
+      return (
+        +(state.value.grade as unknown as { value: number }).value ===
+        +student.grade
+      );
+    });
+  }
+);
+watch(
+  () => state.value.payment_type,
+  () => {
+    const newVal = JSON.parse(JSON.stringify(initialData.value));
+    newVal.forEach((element: any) => {
+      element.orders = element.orders.filter(
+        (order: { payment_type: number }) =>
+          order.payment_type ===
+          (state.value.payment_type as unknown as { value: number }).value
+      );
+    });
+    studentsWithOrders.value = newVal;
+  }
+);
+watch(
+  () => state.value.voucherCode,
+  () => {
+    const newVal = JSON.parse(JSON.stringify(initialData.value));
+    newVal.forEach((element: any) => {
+      element.orders = element.orders.filter(
+        (order: { discount: string }) =>
+          order.discount === state.value.voucherCode
+      );
+    });
+    studentsWithOrders.value = newVal;
+  }
+);
 
 const expanded = ref<any[]>([]);
 const toggleExpanded = val =>
@@ -526,8 +644,17 @@ const toggleExpanded = val =>
         bg-color="white"
         standout="bg-teal text-white"
         label="انتخاب  نوع خرید"
-        v-model="state.buyingType"
-        :options="age"
+        v-model="state.payment_type"
+        :options="[
+          {
+            label: 'قسطی',
+            value: 2
+          },
+          {
+            label: 'نقدی',
+            value: 1
+          }
+        ]"
       >
       </q-select>
       <q-select
@@ -536,12 +663,25 @@ const toggleExpanded = val =>
         standout="bg-teal text-white"
         label="انتخاب کد تخفیف"
         v-model="state.voucherCode"
-        :options="voucherCodes.map(el => el.code)"
+        :options="voucherCodes.map((el:any) => el.code)"
       >
       </q-select>
       <!-- your filter section -->
-      <div class="col-12 text-deep-orange-9">
-        <q-card class="q-pa-xl shadow-0"> فیلتر انتخابی شما: </q-card>
+      <div class="col-12">
+        <q-card class="q-pa-xl shadow-0 row">
+          <span class="text-deep-orange-9 q-mr-lg"> فیلتر انتخابی شما: </span>
+          <div class="flex row q-gutter-lg">
+            <span v-if="state.age"> سن : {{ state.age }} </span>
+            <span v-if="state.date"> تاریخ : {{ state.date }} </span>
+            <span v-if="state.voucherCode"> کد تخفیف : {{ state.voucherCode }} </span>
+            <span v-if="state.city"> شهر : {{ (state.city as any).name }} </span>
+            <span v-if="state.state"> استان : {{ (state.state as any).name }} </span>
+            <span v-if="state.payment_type"> نوع خرید : {{ +(state.payment_type as any ).value === 1 ? 'نقدی':'قسطی' }} </span>
+            <span v-if="state.school"> مدرسه : {{ (state.school as any ).school_name }} </span>
+            <span v-if="state.grade"> مقطع : {{ (state.grade as any ).label }} </span>
+            <span v-if="state.gender"> جنسیت : {{ (state.gender as any )?.label }} </span>
+          </div>
+        </q-card>
       </div>
       <!--  -->
       <!-- Table  -->
@@ -650,6 +790,9 @@ const toggleExpanded = val =>
                               name: 'Payment',
                               params: {
                                 id: props.row.id
+                              },
+                              query:{
+                                payment_type: props.row.payment_type
                               }
                             })
                           "
@@ -689,7 +832,7 @@ const toggleExpanded = val =>
         />
       </div>
       <div class="col-lg-6 col-xs-12">
-        <BarChart
+        <LineChart
           label="نرخ ثبت نام"
           :dataset="registerReportGraph?.value"
           :key="registerReportGraph?.key"
@@ -708,10 +851,10 @@ const toggleExpanded = val =>
             >
             </q-select>
           </div>
-        </BarChart>
+        </LineChart>
       </div>
       <div class="col-12">
-        <BarChart
+        <LineChart
           label="نمودار روند فروش به تفکیک تاریخ"
           :dataset="growthReportChartData.value"
           :key="growthReportChartData.key"
@@ -729,8 +872,16 @@ const toggleExpanded = val =>
             >
             </q-select>
           </div>
-        </BarChart>
+        </LineChart>
       </div>
+
+       <!-- <div class="col-12">
+        <BarChart
+          :dataset="growthReportChartData.value"
+          :key="growthReportChartData.key"
+        >
+      </div>
+      </BarChart> -->
     </div>
   </main>
 </template>
