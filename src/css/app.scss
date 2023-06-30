@@ -1,1 +1,110 @@
 // app global css in SCSS form
+
+// font setup
+
+@font-face {
+  font-family: 'vazir';
+  font-style: normal;
+  font-weight: 400;
+
+  src: url('../assets/fonts/vazir-font-v16.1.0/Farsi-Digits-Without-Latin/Vazir-Medium-FD-WOL.woff2')
+      format('woff2'),
+    url('../assets/fonts/vazir-font-v16.1.0/Farsi-Digits-Without-Latin/Vazir-Medium-FD-WOL.ttf')
+      format('truetype'),
+    url('../assets/fonts/vazir-font-v16.1.0/Farsi-Digits-Without-Latin/Vazir-Medium-FD-WOL.woff2')
+      format('woff');
+  font-display: swap;
+}
+
+// disable default margin for col flex
+
+.q-col-gutter-y-md,
+.q-col-gutter-md {
+  margin-top: 0 !important;
+}
+
+.q-col-gutter-x-lg,
+.q-col-gutter-lg {
+  margin-right: 0 !important;
+}
+
+// other
+
+.md-height {
+  min-height: 3.5rem !important;
+  height: 4rem !important;
+  max-height: 5rem !important;
+}
+
+.custom-rounded-xs {
+  border-radius: 4px !important;
+}
+.custom-rounded-sm {
+  border-radius: 8px !important;
+}
+.custom-rounded-md {
+  border-radius: 12px !important;
+}
+.custom-rounded-lg {
+  border-radius: 16px !important;
+}
+.custom-rounded-xl {
+  border-radius: 20px !important;
+}
+
+//
+
+// breakpoint variable, from https://quasar.dev/style/breakpoints
+// Except the xs one because I think 600px is too small
+$xs-breakpoint: 718px;
+$sm-breakpoint: 1024px;
+$md-breakpoint: 1439px;
+$lg-breakpoint: 1920px;
+
+.container,
+.container-sm,
+.container-md,
+.container-lg,
+.container-xl {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: $xs-breakpoint) {
+  .container,
+  .container-sm {
+    max-width: 540px;
+  }
+}
+
+@media (min-width: $sm-breakpoint) {
+  .container,
+  .container-sm,
+  .container-md {
+    max-width: 920px;
+  }
+}
+
+@media (min-width: $md-breakpoint) {
+  .container,
+  .container-sm,
+  .container-md,
+  .container-lg {
+    max-width: 1140px;
+  }
+}
+
+@media (min-width: $lg-breakpoint) {
+  .container,
+  .container-sm,
+  .container-md,
+  .container-lg,
+  .container-xl {
+    max-width: 1440px;
+  }
+}
+
+/////////////////////////////////////////////////////////////
+///
+/// // app global css in SCSS form
