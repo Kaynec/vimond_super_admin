@@ -24,7 +24,7 @@ const model = reactive({
     birthdate: '',
     profile_image: '' as unknown as File,
     phone_number: '',
-    gender: 'پسر'
+    gender: ''
   },
   mother_phone_number: '',
   father_phone_number: '',
@@ -122,7 +122,6 @@ const onSubmit = async () => {
     }
 
     if (statusText === 'ok') {
-      console.log(data);
       $q.notify({
         type: 'positive',
         message: 'کاربر با موفقیت ویرایش شد'
@@ -130,10 +129,13 @@ const onSubmit = async () => {
       router.push({ name: 'Profile' });
     }
   } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: Object.values(error as Record<string, any>)[0] as string
-    });
+    console.warn(await error)
+    // const errors = await error
+    // console.log(errors)
+    // $q.notify({
+    //   type: 'negative',
+    //   message: Object.values(errors as Record<string, any>)[0] as string
+    // });
   }
 };
 </script>

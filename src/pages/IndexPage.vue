@@ -541,7 +541,7 @@ const toggleExpanded = val =>
         </q-input>
       </div>
 
-      <div class="col-xs-12 col-xl-2 text-white md-height">
+      <!-- <div class="col-xs-12 col-xl-2 text-white md-height">
         <download-excel
           class="fit"
           :data="getExcelFromUserObject(students)"
@@ -561,7 +561,7 @@ const toggleExpanded = val =>
         >
           افزودن</q-btn
         >
-      </div>
+      </div> -->
       <q-select
         class="md-height col-xs-12 col-lg-3"
         bg-color="white"
@@ -658,7 +658,7 @@ const toggleExpanded = val =>
       >
       </q-select>
       <q-select
-        class="md-height col-xs-12 col-lg-3"
+        class="md-height col-xs-12 col-lg-6"
         bg-color="white"
         standout="bg-teal text-white"
         label="انتخاب کد تخفیف"
