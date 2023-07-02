@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import downloadExcel from 'vue-json-excel3';
 import provinces from '../assets/provinces.json';
 import cities from '../assets/cities.json';
 import { computedAsync } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import { instance } from 'src/boot/axios';
 import PieChart from '../components/PieChart.vue';
-import BarChart from '../components/BarChart.vue';
 import LineChart from '../components/LineChart.vue';
 import { grades } from './grades';
 import { colors } from './colors';
@@ -14,7 +12,7 @@ import { useGenerateDate } from './GenerateDates';
 import { columns, localeOBJ, columnsForShop } from './consts';
 import { newDate } from 'date-fns-jalali';
 
-type OrderPercentType = {
+type seperateOrderAmountType = {
   value: number;
   color: string;
   label: string;
@@ -137,37 +135,27 @@ const state = ref({
   voucherCode: ''
 });
 
-const orderPercent = computedAsync<OrderPercentType[] | null>(async () => {
-  const res = await instance.get('/report/order-percent/');
-  // console.log(res.data);
-  if (res.data)
-    return [
-      {
-        value: res.data.shop,
-        label: 'فروشگاه',
-        color: '#DE163A'
-      },
-      {
-        value: res.data.package,
-        color: '#FFEC43',
-        label: 'پکیج'
-      }
-    ];
-  return null;
-}, null);
-
-// const rows = computed(() => {
-//   return studentsWithOrders.value?.map(el => {
-//     return {
-//       shaba: el?.sheba_number,
-//       name: el?.firstname + ' ' + el?.lastname,
-//       field: el?.firstname + ' ' + el?.lastname,
-//       phone: el?.phone_number,
-//       image: el?.profile_image,
-//       id: el?.id
-//     };
-//   });
-// });
+const seperateOrderAmount = computedAsync<seperateOrderAmountType[] | null>(
+  async () => {
+    const res = await instance.get('/report/seprate-order-report/');
+    console.log(res.data);
+    if (res.data)
+      return [
+        {
+          value: res.data.shop_number,
+          label: 'فروشگاه',
+          color: '#DE163A'
+        },
+        {
+          value: res.data.package,
+          color: '#FFEC43',
+          label: 'پکیج'
+        }
+      ];
+    return null;
+  },
+  null
+);
 
 const rows = computed(() => {
   return studentsWithOrders.value?.map((el: any) => {
@@ -222,27 +210,30 @@ const getExcelFromUserObject = (data: any) => {
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// Fix This Later Step
-const dataSetFromProvinces = computed(()=>{
-  const res :any[]= []
-  studentsWithOrders.value.forEach((el,idx)=>{
-    const element  = res.findIndex(child=>child.province === el.province)
+const dataSetFromProvinces = computed(() => {
+  const res: any[] = [];
+  studentsWithOrders.value.forEach((el, idx) => {
+    const element = res.findIndex(child => child.province === el.province);
 
     if (element && element !== idx) {
-      res[element].value += el.orders.length
-    }else {
+      res[element].value += el.orders.length;
+    } else {
       res.push({
-        label:el.province,
+        label: el.province,
         // 35 is the colos array length
-        color:colors[element % 35],
+        color: colors[element % 35],
         value: el.orders.length
-      })
+      });
     }
-  })
-  return studentsWithOrders.value.map(el=>({
-    label:el.province,
-    value:el.orders.reduce((acc:number,current:number)=>acc+=current,0)
-  }))
-})
+  });
+  return studentsWithOrders.value.map(el => ({
+    label: el.province,
+    value: el.orders.reduce(
+      (acc: number, current: number) => (acc += current),
+      0
+    )
+  }));
+});
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const dataSetFromStudents = computed(() => {
@@ -331,7 +322,6 @@ const growthReportChartData = computed(() => {
     value: []
   };
 });
-
 
 const filterDuplicates = (array: any[], property = 'phone_number') => {
   return array.filter((el: any, idx: number, arr: any[]) => {
@@ -425,13 +415,17 @@ watch(
 watch(
   () => state.value.state,
   () => {
-    studentsWithOrders.value = initialData.value.filter((student: any) => student.province === (state.value.state as any).name);
+    studentsWithOrders.value = initialData.value.filter(
+      (student: any) => student.province === (state.value.state as any).name
+    );
   }
 );
 watch(
   () => state.value.city,
   () => {
-    studentsWithOrders.value = initialData.value.filter((student: any) => student.province === (state.value.city as any).name);
+    studentsWithOrders.value = initialData.value.filter(
+      (student: any) => student.province === (state.value.city as any).name
+    );
   }
 );
 watch(
@@ -673,13 +667,28 @@ const toggleExpanded = val =>
           <div class="flex row q-gutter-lg">
             <span v-if="state.age"> سن : {{ state.age }} </span>
             <span v-if="state.date"> تاریخ : {{ state.date }} </span>
-            <span v-if="state.voucherCode"> کد تخفیف : {{ state.voucherCode }} </span>
-            <span v-if="state.city"> شهر : {{ (state.city as any).name }} </span>
-            <span v-if="state.state"> استان : {{ (state.state as any).name }} </span>
-            <span v-if="state.payment_type"> نوع خرید : {{ +(state.payment_type as any ).value === 1 ? 'نقدی':'قسطی' }} </span>
-            <span v-if="state.school"> مدرسه : {{ (state.school as any ).school_name }} </span>
-            <span v-if="state.grade"> مقطع : {{ (state.grade as any ).label }} </span>
-            <span v-if="state.gender"> جنسیت : {{ (state.gender as any )?.label }} </span>
+            <span v-if="state.voucherCode">
+              کد تخفیف : {{ state.voucherCode }}
+            </span>
+            <span v-if="state.city">
+              شهر : {{ (state.city as any).name }}
+            </span>
+            <span v-if="state.state">
+              استان : {{ (state.state as any).name }}
+            </span>
+            <span v-if="state.payment_type">
+              نوع خرید :
+              {{ +(state.payment_type as any).value === 1 ? 'نقدی' : 'قسطی' }}
+            </span>
+            <span v-if="state.school">
+              مدرسه : {{ (state.school as any).school_name }}
+            </span>
+            <span v-if="state.grade">
+              مقطع : {{ (state.grade as any).label }}
+            </span>
+            <span v-if="state.gender">
+              جنسیت : {{ (state.gender as any)?.label }}
+            </span>
           </div>
         </q-card>
       </div>
@@ -791,7 +800,7 @@ const toggleExpanded = val =>
                               params: {
                                 id: props.row.id
                               },
-                              query:{
+                              query: {
                                 payment_type: props.row.payment_type
                               }
                             })
@@ -827,8 +836,8 @@ const toggleExpanded = val =>
         <PieChart
           label="فروش به تفکیک محصول"
           smallLabel="محصول"
-          v-if="orderPercent !== null"
-          :dataset="orderPercent"
+          v-if="seperateOrderAmount !== null"
+          :dataset="seperateOrderAmount"
         />
       </div>
       <div class="col-lg-6 col-xs-12">
@@ -875,7 +884,7 @@ const toggleExpanded = val =>
         </LineChart>
       </div>
 
-       <!-- <div class="col-12">
+      <!-- <div class="col-12">
         <BarChart
           :dataset="growthReportChartData.value"
           :key="growthReportChartData.key"

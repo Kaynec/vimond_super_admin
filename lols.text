@@ -12,7 +12,7 @@ import { colors } from './colors';
 import { useGenerateDate } from './GenerateDates';
 import { columns, localeOBJ } from './consts';
 
-type OrderPercentType = {
+type seperateOrderAmountType = {
   value: number;
   color: string;
   label: string;
@@ -135,7 +135,7 @@ const state = ref({
   voucherCode: ''
 });
 
-const orderPercent = computedAsync<OrderPercentType[] | null>(async () => {
+const seperateOrderAmount = computedAsync<seperateOrderAmountType[] | null>(async () => {
   const res = await instance.get('/report/order-percent/');
   // console.log(res.data);
   if (res.data)
@@ -621,8 +621,8 @@ const toggleExpanded = val => {
         <PieChart
           label="فروش به تفکیک محصول"
           smallLabel="محصول"
-          v-if="orderPercent !== null"
-          :dataset="orderPercent"
+          v-if="seperateOrderAmount !== null"
+          :dataset="seperateOrderAmount"
         />
       </div>
       <div class="col-lg-6 col-xs-12">

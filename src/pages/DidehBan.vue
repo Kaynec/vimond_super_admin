@@ -4,7 +4,6 @@ import { useGenerateDate } from './GenerateDates';
 import { computedAsync } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import { instance } from 'src/boot/axios';
-import { PACKAGE_PRICE } from './consts';
 import PieChart from '../components/PieChart.vue';
 import LineChart from '../components/LineChart.vue';
 import { colors } from './colors';
@@ -36,29 +35,36 @@ const discountReport = computedAsync(async () => {
   return {};
 }, {});
 
-type OrderPercentType = {
+type seperateOrderAmountType = {
   value: number;
   color: string;
   label: string;
 };
 
-const orderPercent = computedAsync<OrderPercentType[] | null>(async () => {
-  const res = await instance.get('/report/order-percent/');
-  if (res.data)
+const seperateOrderData = computedAsync(async () => {
+  const res = await instance.get('/report/seprate-order-report/');
+
+  return res.data;
+}, null);
+
+const seperateOrderAmount = computedAsync<seperateOrderAmountType[] | null>(
+  async () => {
+    const res = await seperateOrderData.value;
+    if (!res) return null;
     return [
       {
-        value: res.data.shop,
+        value: res.shop,
         label: 'فروشگاه',
         color: '#DE163A'
       },
       {
-        value: res.data.package,
+        value: res.package,
         color: '#FFEC43',
         label: 'پکیج'
       }
     ];
-  return null;
-}, null);
+  }
+);
 const paymentRequestReport = computedAsync(async () => {
   const res = await instance.get('/report/payment-request-report/');
   if (res.data) return res.data;
@@ -174,13 +180,6 @@ const userGenderReport = computedAsync(async () => {
   if (res.data) return res.data;
   return {};
 }, {});
-
-const ordernumberReport = computedAsync(async () => {
-  const res = await instance.get('/report/order-number-amount/');
-  if (res.data) return res.data;
-  return {};
-}, {});
-
 const userRoleByGenderChart = computed(() => {
   const result = [];
   for (let [key, value] of Object.entries(userGenderReport.value)) {
@@ -240,7 +239,8 @@ const getExcelFromUserObject = () => {
     {
       'مبلغ آخرین فروش': lastOrder?.value.total_price,
       'تعداد کل فروش': orderNumberAmount?.value?.orders_number,
-      'مبلغ کل فروش پکیج ها': '',
+      'مبلغ کل فروش پکیج ها':
+        seperateOrderData.value?.package_amount?.package__off_price__sum,
       'کل مبلغ تخفیف داده شده':
         orderNumberAmount.value?.amount?.total_off_price__sum,
       'تعداد کل کاربران': userGenderReport.value?.users,
@@ -249,11 +249,6 @@ const getExcelFromUserObject = () => {
     }
   ];
 };
-
-// TODO change this permanently
-const calculatePackagePrice = computed(() => {
-  return (PACKAGE_PRICE * discountReport.value.package ) || 3;
-});
 </script>
 
 <template>
@@ -282,7 +277,8 @@ const calculatePackagePrice = computed(() => {
       </div>
       <div class="col-xs-6 col-md-3">
         <q-card class="fit q-pa-sm md-height">
-          مبلغ کل فروش پکیج ها: {{ calculatePackagePrice }}
+          مبلغ کل فروش پکیج ها:
+          {{ seperateOrderData?.package_amount?.package__off_price__sum }}
         </q-card>
       </div>
       <div class="col-xs-6 col-md-3">
@@ -328,8 +324,8 @@ const calculatePackagePrice = computed(() => {
         <PieChart
           label="فروش به تفکیک محصول"
           smallLabel="محصول"
-          v-if="orderPercent !== null"
-          :dataset="orderPercent"
+          v-if="seperateOrderAmount !== null"
+          :dataset="seperateOrderAmount"
         />
       </div>
 
